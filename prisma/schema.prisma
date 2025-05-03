@@ -1,0 +1,66 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  GUEST
+  INDIVIDUAL
+  TEAM
+}
+
+enum TokenType {
+  ACCESS
+  REFRESH
+  RESET_PASSWORD
+  VERIFY_EMAIL
+  INVITATION
+}
+
+model User {
+  id         String  @id @default(uuid())
+  email      String  @unique
+  user_name  String? @unique
+  google_id  String? @unique
+  name       String?
+  avatar_url String?
+  password   String
+  secret     String
+  role       Role    @default(GUEST)
+
+  is_email_verified Boolean @default(false)
+  is_suspended      Boolean @default(false)
+  is_active         Boolean @default(false)
+
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
+
+  carts    Cart[]
+  projects Project[]
+}
+
+model Cart {
+  id         String   @id @default(uuid())
+  name       String
+  user_id    String
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
+  user       User     @relation(fields: [user_id], references: [id])
+
+  @@unique([name, user_id])
+}
+
+model Project {
+  id         String   @id @default(uuid())
+  name       String
+  user_id    String
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
+  user       User     @relation(fields: [user_id], references: [id])
+
+  @@unique([name, user_id])
+}

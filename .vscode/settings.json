@@ -1,0 +1,37 @@
+{
+  "explorer.fileNesting.enabled": true,
+  "explorer.fileNesting.patterns": {
+    ".env.example": ".env.*",
+    ".prettierrc.*": ".prettierignore",
+    ".eslintrc.*": ".eslintignore",
+    "README.md": "*.mmd"
+  },
+  // enforce LF on save
+  "files.eol": "\n",
+
+  // Prettier as default formatter
+  "editor.defaultFormatter": "esbenp.prettier-vscode",
+  "editor.formatOnSave": true,
+
+  // ensure TS/JS use Prettier
+  "[javascript]": {
+    "editor.formatOnSave": true,
+    "editor.defaultFormatter": "esbenp.prettier-vscode"
+  },
+  "[typescript]": {
+    "editor.defaultFormatter": "esbenp.prettier-vscode"
+  },
+  "[typescriptreact]": {
+    "editor.defaultFormatter": "esbenp.prettier-vscode"
+  },
+
+  // keep quick suggestions in strings
+  "editor.quickSuggestions": {
+    "strings": true
+  },
+
+  // Prisma files
+  "[prisma]": {
+    "editor.defaultFormatter": "Prisma.prisma"
+  }
+}
