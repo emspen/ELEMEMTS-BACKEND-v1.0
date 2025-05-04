@@ -17,7 +17,7 @@ import prisma from '@/prisma/client'
 //     resolve()
 //   }
 
-const auth = () => async (req: Request, res: Response, next: NextFunction) => {
+const auth = async (req: Request, res: Response, next: NextFunction) => {
   try {
     // Get the token from the Authorization header
     const authHeader = req.headers.authorization
@@ -58,7 +58,7 @@ const auth = () => async (req: Request, res: Response, next: NextFunction) => {
   }
 }
 
-const userRole = () => async (req: Request, res: Response, next: NextFunction) => {
+const userRole = async (req: Request, res: Response, next: NextFunction) => {
   const user = req.user as User
   if (!user) throw new ApiError(httpStatus.UNAUTHORIZED, 'User not found')
 

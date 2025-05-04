@@ -4,10 +4,10 @@ import {encryptPassword} from '@/utils/encryption'
 
 import prisma from '@/prisma/client'
 import {User, Prisma} from '@prisma/client'
-import slugify from 'slugify'
 import {generateTotp} from '@/utils/totp'
 import emailService from './email.service'
 import {logger} from '@/config' // Assuming you have a logger utility
+import {generateUniqueUsername} from '@/utils/uniqueUsername'
 
 /**
  * Create a user
@@ -124,12 +124,12 @@ const queryUsers = async <Key extends keyof User>(
 
 /**
  * Get user by id
- * @param {ObjectId} id
+ * @param {Array<id>} id
  * @param {Array<Key>} keys
  * @returns {Promise<Pick<User, Key> | null>}
  */
 const getUserById = async <Key extends keyof User>(
-  id: string,
+  ids: Array<string>,
   keys: Key[] = [
     'id',
     'email',
@@ -145,14 +145,14 @@ const getUserById = async <Key extends keyof User>(
     'updated_at',
     'created_at',
   ] as Key[]
-): Promise<Pick<User, Key> | null> => {
+): Promise<Pick<User, Key>[] | null> => {
   try {
-    return (await prisma.user.findUnique({
-      where: {id},
+    return (await prisma.user.findMany({
+      where: {id: {in: ids}},
       select: keys.reduce((obj, k) => ({...obj, [k]: true}), {}),
-    })) as Pick<User, Key> | null
+    })) as Pick<User, Key>[] | null
   } catch (error) {
-    logger.error(`Error getting user by ID ${id}:`, error)
+    logger.error(`Error getting user by ID ${ids}:`, error)
     throw new ApiError(httpStatus.INTERNAL_SERVER_ERROR, 'Failed to get user by ID')
   }
 }
@@ -194,73 +194,58 @@ const getUserByEmail = async <Key extends keyof User>(
 
 /**
  * Update user by id
- * @param {string} userId
+ * @param {string} id
  * @param {Object} updateBody
  * @returns {Promise<User>}
  */
 const updateUserById = async <Key extends keyof User>(
-  userId: string,
+  id: Array<string>,
   updateBody: Prisma.UserUpdateInput,
   keys: Key[] = ['id', 'email', 'name', 'secret', 'role'] as Key[]
-): Promise<Pick<User, Key> | null> => {
+): Promise<Pick<User, Key>[] | null> => {
   try {
-    const user = await getUserById(userId, keys)
+    const user = await getUserById(id, keys)
     if (!user) {
       throw new ApiError(httpStatus.NOT_FOUND, 'User not found')
     }
-    const updatedUser = await prisma.user.update({
-      where: {id: userId},
+    const users = await prisma.user.updateMany({
+      where: {id: {in: id}},
       data: updateBody,
-      select: keys.reduce((obj, k) => ({...obj, [k]: true}), {}),
     })
-    return updatedUser as Pick<User, Key> | null
+    const updatedUser = await prisma.user.findMany({
+      where: {id: {in: id}},
+      select: keys.reduce((obj, k) => ({...obj, [k]: true}), {}) as Prisma.UserSelect,
+    })
+    return updatedUser as Pick<User, Key>[] | null
   } catch (error) {
     if (error instanceof ApiError) {
       throw error
     }
-    logger.error(`Error updating user ${userId}:`, error)
+    logger.error(`Error updating user ${id}:`, error)
     throw new ApiError(httpStatus.INTERNAL_SERVER_ERROR, 'Failed to update user')
   }
 }
-
 /**
  * Delete user by id
  * @param {string} userId
  * @returns {Promise<User>}
  */
-const deleteUserById = async (userId: string): Promise<User> => {
-  try {
-    const user = await getUserById(userId)
-    if (!user) {
-      throw new ApiError(httpStatus.NOT_FOUND, 'User not found')
-    }
-    await prisma.user.delete({where: {id: user.id}})
-    return user
-  } catch (error) {
-    if (error instanceof ApiError) {
-      throw error
-    }
-    logger.error(`Error deleting user ${userId}:`, error)
-    throw new ApiError(httpStatus.INTERNAL_SERVER_ERROR, 'Failed to delete user')
-  }
-}
-
-const generateUniqueUsername = async (email: string): Promise<string> => {
-  try {
-    const base = slugify(email.split('@')[0], {lower: true, strict: true})
-    let user_name = base
-    let count = 1
-
-    while (await prisma.user.findUnique({where: {user_name}})) {
-      user_name = `${base}-${count}`
-      count++
-    }
-    return user_name
-  } catch (error) {
-    logger.error(`Error generating unique username for ${email}:`, error)
-    throw new ApiError(httpStatus.INTERNAL_SERVER_ERROR, 'Failed to generate unique username')
-  }
-}
+// const deleteUserById = async (userId: string): Promise<User> => {
+//   try {
+//     const user = await getUserById(userId)
+//     if (!user) {
+//       throw new ApiError(httpStatus.NOT_FOUND, 'User not found')
+//     }
+//     await prisma.user.delete({where: {id: user.id}})
+//     return user
+//   } catch (error) {
+//     if (error instanceof ApiError) {
+//       throw error
+//     }
+//     logger.error(`Error deleting user ${userId}:`, error)
+//     throw new ApiError(httpStatus.INTERNAL_SERVER_ERROR, 'Failed to delete user')
+//   }
+// }
 
 export default {
   createUser,
@@ -268,6 +253,4 @@ export default {
   getUserById,
   getUserByEmail,
   updateUserById,
-  deleteUserById,
-  generateUniqueUsername,
 }

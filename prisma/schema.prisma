@@ -11,6 +11,7 @@ enum Role {
   GUEST
   INDIVIDUAL
   TEAM
+  ADMIN
 }
 
 enum TokenType {

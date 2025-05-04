@@ -147,7 +147,7 @@ const getSession = catchAsync(async (req, res) => {
     if (token) {
       const decoded = await tokenService.verifyToken(token, TokenType.ACCESS)
       if (decoded.user_id) {
-        const user = await userService.getUserById(decoded.user_id)
+        const user = await userService.getUserById([decoded.user_id])
         res.status(httpStatus.OK).send({user})
       } else {
         throw new ApiError(httpStatus.NOT_FOUND, 'User not found')

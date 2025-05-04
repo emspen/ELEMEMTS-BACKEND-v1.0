@@ -150,11 +150,11 @@ const refreshAuth = async (refreshToken: string): Promise<any> => {
     console.log('👌👌👌', refreshToken)
     const refreshTokenData = await tokenService.verifyToken(refreshToken, TokenType.REFRESH)
     if (refreshTokenData.user_id) {
-      const user = await userService.getUserById(refreshTokenData.user_id, ['id'])
+      const user = await userService.getUserById([refreshTokenData.user_id], ['id'])
       if (!user) {
         throw new ApiError(httpStatus.BAD_REQUEST, 'User Not Found ')
       }
-      return tokenService.generateAuthTokens({id: user.id})
+      return tokenService.generateAuthTokens({id: user[0].id})
     }
   } catch (error) {
     throw new ApiError(httpStatus.UNAUTHORIZED, 'Please authenticate')
@@ -174,12 +174,12 @@ const resetPassword = async (resetPasswordToken: string, newPassword: string): P
       TokenType.RESET_PASSWORD
     )
     if (resetPasswordTokenData.user_id) {
-      const user = await userService.getUserById(resetPasswordTokenData.user_id)
+      const user = await userService.getUserById([resetPasswordTokenData.user_id])
       if (!user) {
         throw new ApiError(httpStatus.BAD_REQUEST, 'User Not Found ')
       }
       const encryptedPassword = await encryptPassword(newPassword)
-      await userService.updateUserById(user.id, {
+      await userService.updateUserById([user[0].id], {
         password: encryptedPassword,
       })
     }
@@ -209,7 +209,7 @@ const verifyEmail = async (
 
     if (!user.is_email_verified) {
       if (verifyTotp(verifyEmailToken, user.secret)) {
-        await userService.updateUserById(user.id, {is_email_verified: true})
+        await userService.updateUserById([user.id], {is_email_verified: true})
       }
     } else {
       throw new ApiError(httpStatus.BAD_REQUEST, 'Email already verified')

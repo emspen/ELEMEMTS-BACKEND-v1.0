@@ -12,6 +12,13 @@ const getUsers = catchAsync(async (req, res) => {
   res.status(httpStatus.OK).send(users)
 })
 
+const suspendUsers = catchAsync(async (req, res) => {
+  const {ids}: {ids: Array<string>} = req.body
+  const users = await userService.updateUserById(ids, {is_suspended: true})
+  res.status(httpStatus.NO_CONTENT).send()
+})
+
 export default {
   getUsers,
+  suspendUsers,
 }
