@@ -11,10 +11,10 @@ const defaultRoutes = [
     path: '/admin',
     route: adminRoute,
   },
-  {
-    path: '/client',
-    route: clientRoute,
-  },
+  // {
+  //   path: '/client',
+  //   route: clientRoute,
+  // },
   {
     path: '/auth',
     route: authRoute,

@@ -1,4 +1,4 @@
 const config = {
-  'backend/**/**/**/*.{js,jsx,ts,tsx}': 'npx prettier --write',
+  'backend/**/**/**/*.{ts}': ['eslint --fix', 'prettier --write', 'git add'],
 }
 export default config

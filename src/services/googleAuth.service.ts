@@ -1,11 +1,10 @@
 import qs from 'querystring'
-import fetch from 'node-fetch'
-import config from '@/config/config'
-import userService from '@/services/user/user.service'
+import {envConfig} from '@/config'
+import userService from '@/services/user.service'
 import axios from 'axios'
 
-import { generateTotp } from '@/utils/totp'
-import authService from '@/services/user/auth.service'
+import {generateTotp} from '@/utils/totp'
+import authService from '@/services/auth.service'
 import ApiError from '@/utils/apiError'
 import httpStatus from 'http-status'
 
@@ -30,10 +29,10 @@ interface GoogleUserResponse {
   locale?: string
 }
 
-const googleAuthHandler = async (code: string, inviteToken?: string) => {
-  const GOOGLE_CLIENT_ID = config.google.client_id
-  const GOOGLE_CLIENT_SECRET = config.google.client_secret
-  const GOOGLE_REDIRECT_URI = config.google.redirect_uri
+export const googleAuthHandler = async (code: string, inviteToken?: string) => {
+  const GOOGLE_CLIENT_ID = envConfig.google.client_id
+  const GOOGLE_CLIENT_SECRET = envConfig.google.client_secret
+  const GOOGLE_REDIRECT_URI = envConfig.google.redirect_uri
 
   console.log('💥:', GOOGLE_REDIRECT_URI)
 
@@ -53,7 +52,7 @@ const googleAuthHandler = async (code: string, inviteToken?: string) => {
         grant_type: 'authorization_code',
       }),
       {
-        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        headers: {'Content-Type': 'application/x-www-form-urlencoded'},
       }
     )
     const tokenData = tokenResponse.data as GoogleTokenResponse
@@ -64,7 +63,7 @@ const googleAuthHandler = async (code: string, inviteToken?: string) => {
 
     // Step 2: Fetch user info from Google
     const userResponse = await axios.get('https://www.googleapis.com/oauth2/v2/userinfo', {
-      headers: { Authorization: `Bearer ${tokenData.access_token}` },
+      headers: {Authorization: `Bearer ${tokenData.access_token}`},
     })
 
     const userData = userResponse.data as GoogleUserResponse
@@ -80,13 +79,10 @@ const googleAuthHandler = async (code: string, inviteToken?: string) => {
     if (existingUser) {
       user = existingUser
     } else {
-      const { token, secret } = generateTotp()
-
       user = await userService.createUser(
         userData.email,
         userData.name,
         'googlePassword',
-        secret.base32,
         userData.id,
         userData.verified_email
       )
@@ -107,4 +103,3 @@ const googleAuthHandler = async (code: string, inviteToken?: string) => {
     throw new ApiError(httpStatus.BAD_REQUEST, 'Authentication Failed')
   }
 }
-export default googleAuthHandler

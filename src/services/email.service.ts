@@ -26,6 +26,7 @@ if (envConfig.env !== 'test') {
  */
 const sendEmail = async (to: string, subject: string, text: string) => {
   try {
+    console.log('💥:', to)
     const msg = {from: envConfig.email.from, to, subject, text}
     await transport.sendMail(msg)
     logger.info(`Email sent successfully to ${to}`)
@@ -112,7 +113,7 @@ const sendTeamInvitationEmail = async (from: string, to: string, token: string):
     logger.info(`Team invitation email sent successfully to ${to}`)
   } catch (error: any) {
     logger.error(`Failed to send team invitation email to ${to}: ${error.message}`)
-    throw new ApiError(`Failed to send team invitation email: ${error.message}`)
+    throw new Error(`Failed to send team invitation email: ${error.message}`)
   }
 }
 

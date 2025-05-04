@@ -22,13 +22,6 @@ const login = {
     inviteToken: Joi.string(),
   }),
 }
-
-const logout = {
-  body: Joi.object().keys({
-    refreshToken: Joi.string().required(),
-  }),
-}
-
 const refreshTokens = {
   body: Joi.object().keys({
     refreshToken: Joi.string().required(),
@@ -73,7 +66,6 @@ const resendCode = {
 export default {
   register,
   login,
-  logout,
   refreshTokens,
   forgotPassword,
   resetPassword,
