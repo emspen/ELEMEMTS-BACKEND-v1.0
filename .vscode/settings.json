@@ -7,7 +7,6 @@
     "README.md": "*.mmd"
   },
   // enforce LF on save
-  "files.eol": "\n",
 
   // Prettier as default formatter
   "editor.defaultFormatter": "esbenp.prettier-vscode",

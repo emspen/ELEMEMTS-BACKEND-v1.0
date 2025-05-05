@@ -22,13 +22,6 @@ const registerOrLogin = catchAsync(async (req, res) => {
     const tokens = await tokenService.generateAuthTokens(user)
     const userData = encodeURIComponent(JSON.stringify(user))
 
-    res.cookie('accessToken', tokens.access.token, {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
-      expires: tokens.access.expires,
-      sameSite: 'strict',
-    })
-
     res.cookie('refreshToken', tokens.refresh.token, {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
@@ -37,9 +30,12 @@ const registerOrLogin = catchAsync(async (req, res) => {
       path: '/api/v1/auth/refresh-tokens', // Restrict refresh token to specific path
     })
 
-    res.status(httpStatus.OK).send({user: userData})
+    res
+      .status(httpStatus.OK)
+      .send({status: 'success', data: {user: userData, accessToken: tokens.access.token}})
   } catch (error: any) {
     res.status(error.statusCode || httpStatus.INTERNAL_SERVER_ERROR).send({
+      status: 'error',
       message: error.message || 'An error occurred during Google authentication',
     })
   }

@@ -53,7 +53,6 @@ const login = async (
   Omit<
     User,
     | 'password'
-    | 'google_id'
     | 'carts'
     | 'downloads'
     | 'created_at'
@@ -61,6 +60,8 @@ const login = async (
     | 'projects'
     | 'is_active'
     | 'user_name'
+    | 'is_active'
+    | 'is_suspended'
   >
 > => {
   const user = await loginUserWithEmailAndPassword(email, password, google_id)
@@ -87,7 +88,6 @@ const loginUserWithEmailAndPassword = async (
   Omit<
     User,
     | 'password'
-    | 'google_id'
     | 'carts'
     | 'downloads'
     | 'created_at'
@@ -95,6 +95,8 @@ const loginUserWithEmailAndPassword = async (
     | 'projects'
     | 'is_active'
     | 'user_name'
+    | 'is_active'
+    | 'is_suspended'
   >
 > => {
   const user = await userService.getUserByEmail(email, [
@@ -107,13 +109,12 @@ const loginUserWithEmailAndPassword = async (
     'role',
     'avatar_url',
     'is_email_verified',
-    'is_suspended',
   ])
-  if (!user) throw new ApiError(httpStatus.UNAUTHORIZED, 'Incorrect email or password')
+  if (!user) throw new ApiError(httpStatus.UNAUTHORIZED, 'Incorrect email')
 
   if (user?.google_id === undefined)
     if (!(await isPasswordMatch(password, user.password as string))) {
-      throw new ApiError(httpStatus.UNAUTHORIZED, 'Incorrect email or password')
+      throw new ApiError(httpStatus.UNAUTHORIZED, 'Incorrect password')
     } else if (user?.google_id !== google_id || user?.is_email_verified === false) {
       console.log(
         '😮 User ',
@@ -128,15 +129,19 @@ const loginUserWithEmailAndPassword = async (
     }
   return exclude(user, ['password'])
 }
+
 /**
- * Logout
- * @param {string} accessToken
- * @returns {Promise<void>}
+ *
+ *
+ * @param {string} id
+ * @return {*}  {Promise<void>}
  */
-const logout = async (accessToken: string): Promise<void> => {
-  const accessTokenData = await tokenService.verifyToken(accessToken, TokenType.ACCESS)
-  if (!accessTokenData) {
-    throw new ApiError(httpStatus.NOT_FOUND, 'Not found')
+const logout = async (id: string): Promise<void> => {
+  try {
+    await userService.updateUserById([id], {is_active: false})
+  } catch (error: any) {
+    logger.error(`Failed to logout user with id ${id}: ${error.message}`)
+    throw new ApiError(httpStatus.BAD_REQUEST, `Logout failed: ${error.message}`)
   }
 }
 
