@@ -1,8 +1,7 @@
 import express from 'express'
-import {envConfig} from '@/config'
 import adminRoute from '@/routes/admin'
 import clientRoute from '@/routes/client'
-import authRoute from '@/routes/auth.route'
+import authRoute from '@/routes/shared/auth.route'
 
 const router = express.Router()
 

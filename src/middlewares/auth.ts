@@ -37,7 +37,7 @@ const auth = async (req: Request, res: Response, next: NextFunction) => {
     if (payload.type !== 'ACCESS') {
       throw new ApiError(httpStatus.UNAUTHORIZED, 'Invalid token type')
     }
-    if (payload.iat * 1000 < Date.now()) {
+    if (payload.iat * 1000 > Date.now()) {
       throw new ApiError(httpStatus.UNAUTHORIZED, 'Token has expired')
     }
 

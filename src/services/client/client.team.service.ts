@@ -2,7 +2,7 @@ import prisma from '@/prisma/client'
 import httpStatus from 'http-status'
 
 import {generateToken} from '@/utils/token'
-import emailService from '@/services/email.service'
+import emailService from '@/services/shared/email.service'
 import ApiError from '@/utils/apiError'
 import {envConfig} from '@/config'
 

@@ -1,5 +1,5 @@
 import Joi from 'joi'
-import {password} from '@/validations/custom.validation'
+import {password} from '@/validations/shared/custom.validation'
 import {Role} from '@prisma/client'
 
 const createUser = {

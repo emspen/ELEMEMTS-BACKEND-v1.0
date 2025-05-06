@@ -1,9 +1,9 @@
 import express from 'express'
 import auth from '@/middlewares/auth'
 import validate from '@/middlewares/validate'
-import authValidation from '@/validations/auth.validation'
-import authController from '@/controllers/auth.controller'
-import googleAuthController from '@/controllers/googleAuth.controller'
+import authValidation from '@/validations/shared/auth.validation'
+import authController from '@/controllers/shared/auth.controller'
+import googleAuthController from '@/controllers/shared/googleAuth.controller'
 const router = express.Router()
 
 router.post('/register', validate(authValidation.register), authController.registerUser)

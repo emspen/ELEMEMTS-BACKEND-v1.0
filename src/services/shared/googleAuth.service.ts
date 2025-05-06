@@ -1,10 +1,10 @@
 import qs from 'querystring'
 import {envConfig} from '@/config'
-import userService from '@/services/user.service'
+import userService from '@/services/shared/user.service'
 import axios from 'axios'
 
 import {generateTotp} from '@/utils/totp'
-import authService from '@/services/auth.service'
+import authService from '@/services/shared/auth.service'
 import ApiError from '@/utils/apiError'
 import httpStatus from 'http-status'
 

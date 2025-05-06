@@ -3,9 +3,9 @@ import httpStatus from 'http-status'
 import exclude from '@/utils/exclude'
 import ApiError from '@/utils/apiError'
 
-import authService from '@/services/auth.service'
-import userService from '@/services/user.service'
-import tokenService from '@/services/token.service'
+import authService from '@/services/shared/auth.service'
+import userService from '@/services/shared/user.service'
+import tokenService from '@/services/shared/token.service'
 
 import {TokenType, User} from '@prisma/client'
 import catchAsync from '@/utils/catchAsync'
@@ -100,13 +100,14 @@ const /**
   refreshTokens = catchAsync(async (req, res) => {
     try {
       const tokens = await authService.refreshAuth(req.body.refreshToken)
-      res.cookie('token', tokens.token, {
+      res.cookie('refreshToken', tokens.refresh.token, {
         httpOnly: true,
         secure: process.env.NODE_ENV === 'production',
-        expires: new Date(tokens.expires),
+        expires: tokens.refresh.expires,
         sameSite: 'strict',
+        path: '/api/v1/auth/refresh-tokens', // Restrict refresh token to specific path
       })
-      res.status(httpStatus.NO_CONTENT).send({status: 'success'})
+      res.status(httpStatus.OK).send({status: 'success', data: {accessToken: tokens.access.token}})
     } catch (error: any) {
       res.status(error.statusCode || httpStatus.INTERNAL_SERVER_ERROR).send({
         status: 'error',

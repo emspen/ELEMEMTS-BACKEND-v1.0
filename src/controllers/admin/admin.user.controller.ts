@@ -1,7 +1,7 @@
 import httpStatus from 'http-status'
 
 import catchAsync from '@/utils/catchAsync'
-import userService from '@/services/user.service'
+import userService from '@/services/shared/user.service'
 
 const /**
    * Get users
