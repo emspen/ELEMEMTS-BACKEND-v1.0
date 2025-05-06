@@ -1,5 +1,5 @@
 import express from 'express'
-import userRoute from './adminUser.route'
+import userRoute from './admin.user.route'
 
 const router = express.Router()
 const defaultRoutes = [

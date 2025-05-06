@@ -9,12 +9,12 @@ import ApiError from '@/utils/apiError'
 import httpStatus from 'http-status'
 
 interface GoogleTokenResponse {
-  access_token: string
-  expires_in: number
-  refresh_token?: string
+  accessToken: string
+  expiresIn: number
+  refreshToken?: string
   scope: string
-  token_type: string
-  id_token?: string
+  tokenType: string
+  idToken?: string
 }
 
 // Define expected structure of user data
@@ -30,9 +30,9 @@ interface GoogleUserResponse {
 }
 
 export const googleAuthHandler = async (code: string, inviteToken?: string) => {
-  const GOOGLE_CLIENT_ID = envConfig.google.client_id
-  const GOOGLE_CLIENT_SECRET = envConfig.google.client_secret
-  const GOOGLE_REDIRECT_URI = envConfig.google.redirect_uri
+  const GOOGLE_CLIENT_ID = envConfig.google.clientId
+  const GOOGLE_CLIENT_SECRET = envConfig.google.clientSecret
+  const GOOGLE_REDIRECT_URI = envConfig.google.redirectUri
 
   console.log('💥:', GOOGLE_REDIRECT_URI)
 
@@ -57,13 +57,13 @@ export const googleAuthHandler = async (code: string, inviteToken?: string) => {
     )
     const tokenData = tokenResponse.data as GoogleTokenResponse
     console.log('🚀 tokenData from google : ', tokenData)
-    if (!tokenData.access_token) {
+    if (!tokenData.accessToken) {
       throw new ApiError(httpStatus.NOT_FOUND, 'Access Token from google not found')
     }
 
     // Step 2: Fetch user info from Google
     const userResponse = await axios.get('https://www.googleapis.com/oauth2/v2/userinfo', {
-      headers: {Authorization: `Bearer ${tokenData.access_token}`},
+      headers: {Authorization: `Bearer ${tokenData.accessToken}`},
     })
 
     const userData = userResponse.data as GoogleUserResponse
@@ -92,7 +92,7 @@ export const googleAuthHandler = async (code: string, inviteToken?: string) => {
     const loggedInUser = await authService.loginUserWithEmailAndPassword(
       user.email,
       user.password ?? 'googlePassword',
-      user.google_id || undefined
+      user.googleId || undefined
     )
 
     return loggedInUser

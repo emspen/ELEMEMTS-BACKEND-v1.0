@@ -1,8 +1,6 @@
 import httpStatus from 'http-status'
 
-import exclude from '@/utils/exclude'
 import catchAsync from '@/utils/catchAsync'
-import ApiError from '@/utils/apiError'
 import userService from '@/services/user.service'
 
 const getUsers = catchAsync(async (req, res) => {
@@ -14,7 +12,7 @@ const getUsers = catchAsync(async (req, res) => {
 
 const suspendUsers = catchAsync(async (req, res) => {
   const {ids}: {ids: Array<string>} = req.body
-  const users = await userService.updateUserById(ids, {is_suspended: true})
+  const users = await userService.updateUserById(ids, {isSuspended: true})
   res.status(httpStatus.NO_CONTENT).send()
 })
 
