@@ -5,10 +5,9 @@ import emailService from './email.service'
 import ApiError from '@/utils/apiError'
 import exclude from '@/utils/exclude'
 import {encryptPassword, isPasswordMatch} from '@/utils/encryption'
-import {generateTotp, regenerateTotp, verifyTotp} from '@/utils/totp'
+import {regenerateTotp, verifyTotp} from '@/utils/totp'
 import {logger} from '@/config'
 import {TokenType, User} from '@prisma/client'
-import prisma from '@/prisma/client'
 
 /**
  * Register with email and password, name
@@ -25,14 +24,13 @@ const register = async (
   Omit<
     User,
     | 'password'
-    | 'google_id'
+    | 'googleId'
     | 'carts'
     | 'downloads'
-    | 'created_at'
-    | 'updated_at'
+    | 'createdAt'
+    | 'updatedAt'
     | 'projects'
-    | 'is_active'
-    | 'user_name'
+    | 'userName'
   >
 > => {
   try {
@@ -48,24 +46,22 @@ const register = async (
 const login = async (
   email: string,
   password: string,
-  google_id?: string
+  googleId?: string
 ): Promise<
   Omit<
     User,
     | 'password'
+    | 'googleId'
     | 'carts'
     | 'downloads'
-    | 'created_at'
-    | 'updated_at'
+    | 'createdAt'
+    | 'updatedAt'
     | 'projects'
-    | 'is_active'
-    | 'user_name'
-    | 'is_active'
-    | 'is_suspended'
+    | 'userName'
   >
 > => {
-  const user = await loginUserWithEmailAndPassword(email, password, google_id)
-  if (!user.is_email_verified) {
+  const user = await loginUserWithEmailAndPassword(email, password, googleId)
+  if (!user.isEmailVerified) {
     const {token} = regenerateTotp(user.secret as string)
     await emailService.sendVerificationCode(email, token)
     console.log('❤️ Email Verification Code: ', token)
@@ -83,48 +79,40 @@ const login = async (
 const loginUserWithEmailAndPassword = async (
   email: string,
   password: string,
-  google_id?: string
+  googleId?: string
 ): Promise<
   Omit<
     User,
     | 'password'
+    | 'googleId'
     | 'carts'
     | 'downloads'
-    | 'created_at'
-    | 'updated_at'
+    | 'createdAt'
+    | 'updatedAt'
     | 'projects'
-    | 'is_active'
-    | 'user_name'
-    | 'is_active'
-    | 'is_suspended'
+    | 'userName'
   >
 > => {
   const user = await userService.getUserByEmail(email, [
     'id',
     'email',
     'name',
-    'google_id',
+    'googleId',
     'password',
     'secret',
     'role',
-    'avatar_url',
-    'is_email_verified',
+    'avatarUrl',
+    'isActive',
+    'isEmailVerified',
+    'isSuspended',
   ])
   if (!user) throw new ApiError(httpStatus.UNAUTHORIZED, 'Incorrect email')
 
-  if (user?.google_id === undefined)
+  if (user?.googleId === undefined)
     if (!(await isPasswordMatch(password, user.password as string))) {
-      throw new ApiError(httpStatus.UNAUTHORIZED, 'Incorrect password')
-    } else if (user?.google_id !== google_id || user?.is_email_verified === false) {
-      console.log(
-        '😮 User ',
-        user.google_id,
-        '\n',
-        user.is_email_verified,
-        '\n',
-        'Input',
-        google_id
-      )
+      throw new ApiError(httpStatus.UNAUTHORIZED, 'Incorrect email or password')
+    } else if (user?.googleId !== googleId || user?.isEmailVerified === false) {
+      console.log('😮 User ', user.googleId, '\n', user.isEmailVerified, '\n', 'Input', googleId)
       throw new ApiError(httpStatus.NOT_FOUND, 'Authorization Failed')
     }
   return exclude(user, ['password'])
@@ -138,7 +126,7 @@ const loginUserWithEmailAndPassword = async (
  */
 const logout = async (id: string): Promise<void> => {
   try {
-    await userService.updateUserById([id], {is_active: false})
+    await userService.updateUserById([id], {isActive: false})
   } catch (error: any) {
     logger.error(`Failed to logout user with id ${id}: ${error.message}`)
     throw new ApiError(httpStatus.BAD_REQUEST, `Logout failed: ${error.message}`)
@@ -154,8 +142,8 @@ const refreshAuth = async (refreshToken: string): Promise<any> => {
   try {
     console.log('👌👌👌', refreshToken)
     const refreshTokenData = await tokenService.verifyToken(refreshToken, TokenType.REFRESH)
-    if (refreshTokenData.user_id) {
-      const user = await userService.getUserById([refreshTokenData.user_id], ['id'])
+    if (refreshTokenData.userId) {
+      const user = await userService.getUserById([refreshTokenData.userId], ['id'])
       if (!user) {
         throw new ApiError(httpStatus.BAD_REQUEST, 'User Not Found ')
       }
@@ -178,8 +166,8 @@ const resetPassword = async (resetPasswordToken: string, newPassword: string): P
       resetPasswordToken,
       TokenType.RESET_PASSWORD
     )
-    if (resetPasswordTokenData.user_id) {
-      const user = await userService.getUserById([resetPasswordTokenData.user_id])
+    if (resetPasswordTokenData.userId) {
+      const user = await userService.getUserById([resetPasswordTokenData.userId])
       if (!user) {
         throw new ApiError(httpStatus.BAD_REQUEST, 'User Not Found ')
       }
@@ -212,9 +200,9 @@ const verifyEmail = async (
       throw new ApiError(httpStatus.NOT_FOUND, 'User not found')
     }
 
-    if (!user.is_email_verified) {
+    if (!user.isEmailVerified) {
       if (verifyTotp(verifyEmailToken, user.secret)) {
-        await userService.updateUserById([user.id], {is_email_verified: true})
+        await userService.updateUserById([user.id], {isEmailVerified: true})
       }
     } else {
       throw new ApiError(httpStatus.BAD_REQUEST, 'Email already verified')
@@ -226,14 +214,14 @@ const verifyEmail = async (
 
 const resendCode = async (email: string, type: string): Promise<void> => {
   try {
-    const user = await userService.getUserByEmail(email, ['is_email_verified', 'secret'])
+    const user = await userService.getUserByEmail(email, ['isEmailVerified', 'secret'])
 
     if (!user) {
       throw new ApiError(httpStatus.NOT_FOUND, 'User not found')
     }
     const {token} = regenerateTotp(user.secret as string)
     if (type === 'email-verification') {
-      if (!user.is_email_verified) {
+      if (!user.isEmailVerified) {
         await emailService.sendVerificationEmail(email, token)
         console.log('❤️ Email Verification Code: ', token)
       }

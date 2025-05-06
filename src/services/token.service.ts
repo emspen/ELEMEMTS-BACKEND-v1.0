@@ -19,13 +19,13 @@ import {VerifyToken} from '@/types/response'
  * @returns {string}
  */
 const generateToken = (
-  user_id: string,
+  userId: string,
   expires: Moment,
   type: TokenType,
   secret: string = envConfig.jwt.secret
 ): string => {
   const payload = {
-    sub: user_id,
+    sub: userId,
     iat: moment().unix(),
     exp: expires.unix(),
     type,
@@ -83,19 +83,19 @@ const generateToken = (
  */
 const verifyToken = async (token: string, type: TokenType): Promise<VerifyToken> => {
   const payload = jwt.verify(token, envConfig.jwt.secret) as JwtPayload
-  const user_id = String(payload.sub)
+  const userId = String(payload.sub)
   if (!payload.exp) {
-    throw new Error('Invalid token: missing expiration')
+    throw new ApiError(httpStatus.INTERNAL_SERVER_ERROR, 'Invalid token: missing expiration')
   }
   const expirationTime = new Date(payload.exp * 1000)
   if (expirationTime < new Date()) {
-    throw new Error('Token has been expired')
+    throw new ApiError(httpStatus.INTERNAL_SERVER_ERROR, 'Token has been expired')
   }
   return {
     token,
     expires: expirationTime,
     type,
-    user_id,
+    userId,
   } as VerifyToken
 }
 

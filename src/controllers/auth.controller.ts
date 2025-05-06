@@ -31,6 +31,7 @@ const /**
       })
     } catch (error: any) {
       res.status(error.statusCode || httpStatus.INTERNAL_SERVER_ERROR).send({
+        status: 'error',
         message: error.message || 'An error occurred during registration',
       })
     }
@@ -59,7 +60,7 @@ const /**
         status: 'succcess',
         data: {
           accessToken: tokens.access.token,
-          user: exclude(user, ['secret', 'is_email_verified', 'google_id', 'id']),
+          user: exclude(user, ['secret', 'isEmailVerified', 'id']),
         },
       })
     } catch (error: any) {
@@ -228,10 +229,10 @@ const /**
       const token = req.headers.authorization?.replace('Bearer ', '')
       if (token) {
         const decoded = await tokenService.verifyToken(token, TokenType.ACCESS)
-        if (decoded.user_id) {
+        if (decoded.userId) {
           const user = await userService.getUserById(
-            [decoded.user_id],
-            ['email', 'name', 'role', 'avatar_url']
+            [decoded.userId],
+            ['email', 'name', 'role', 'avatarUrl']
           )
           res.status(httpStatus.OK).send({status: 'success', user: {user}})
         } else {

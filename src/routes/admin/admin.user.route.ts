@@ -1,5 +1,5 @@
 import express from 'express'
-import userManageController from '@/controllers/admin/userManage.controller'
+import userManageController from '@/controllers/admin/admin.user.controller'
 import auth from '@/middlewares/auth'
 import adminRole from '@/middlewares/adminRole'
 

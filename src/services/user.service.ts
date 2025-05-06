@@ -22,7 +22,7 @@ const createUser = async (
   email: string,
   name: string,
   password: string,
-  google_id?: string,
+  googleId?: string,
   isVerified?: boolean
 ): Promise<User> => {
   try {
@@ -32,14 +32,14 @@ const createUser = async (
     const {token, secret} = generateTotp()
     console.log(email)
     await emailService.sendVerificationEmail(email, token)
-    const user_name = await generateUniqueUsername(email)
+    const userName = await generateUniqueUsername(email)
 
     const user = await prisma.user.create({
       data: {
         email,
-        user_name,
-        google_id,
-        is_email_verified: isVerified,
+        userName,
+        googleId,
+        isEmailVerified: isVerified,
         name,
         password: await encryptPassword(password),
         secret: secret.base32,
@@ -73,37 +73,37 @@ const queryUsers = async <Key extends keyof User>(
     sortBy?: string
     sortType?: 'asc' | 'desc'
   },
-  keys: Key[] = ['id', 'email', 'name', 'is_email_verified', 'created_at', 'updated_at'] as Key[]
+  keys: Key[] = ['id', 'email', 'name', 'isEmailVerified', 'createdAt', 'updatedAt'] as Key[]
 ): Promise<Pick<User, Key>[]> => {
   try {
-    const {limit = 10, page = 1, sortBy = 'created_at', sortType = 'desc'} = options
+    const {limit = 10, page = 1, sortBy = 'createdAt', sortType = 'desc'} = options
 
     // Process date filters if they exist
     const where: Record<string, any> = {...filter}
 
-    // Handle created_at date filter
-    if (where.created_at) {
-      // Handle the case where created_at is an object with operators like gte
-      if (typeof where.created_at === 'object') {
+    // Handle createdAt date filter
+    if (where.createdAt) {
+      // Handle the case where createdAt is an object with operators like gte
+      if (typeof where.createdAt === 'object') {
         // Convert date strings to proper ISO format for each operator
-        Object.keys(where.created_at).forEach((operator) => {
-          const dateStr = where.created_at[operator]
+        Object.keys(where.createdAt).forEach((operator) => {
+          const dateStr = where.createdAt[operator]
           if (typeof dateStr === 'string' && !dateStr.includes('T')) {
-            where.created_at[operator] = `${dateStr}T00:00:00.000Z`
+            where.createdAt[operator] = `${dateStr}T00:00:00.000Z`
           }
         })
       }
     }
 
-    // Handle updated_at date filter
-    if (where.updated_at) {
-      // Handle the case where updated_at is an object with operators like gte
-      if (typeof where.updated_at === 'object') {
+    // Handle updatedAt date filter
+    if (where.updatedAt) {
+      // Handle the case where updatedAt is an object with operators like gte
+      if (typeof where.updatedAt === 'object') {
         // Convert date strings to proper ISO format for each operator
-        Object.keys(where.updated_at).forEach((operator) => {
-          const dateStr = where.updated_at[operator]
+        Object.keys(where.updatedAt).forEach((operator) => {
+          const dateStr = where.updatedAt[operator]
           if (typeof dateStr === 'string' && !dateStr.includes('T')) {
-            where.updated_at[operator] = `${dateStr}T00:00:00.000Z`
+            where.updatedAt[operator] = `${dateStr}T00:00:00.000Z`
           }
         })
       }
@@ -133,17 +133,17 @@ const getUserById = async <Key extends keyof User>(
   keys: Key[] = [
     'id',
     'email',
-    'user_name',
+    'userName',
     'name',
     'password',
     'secret',
     'role',
-    'avatar_url',
-    'is_email_verified',
-    'is_active',
-    'is_suspended',
-    'updated_at',
-    'created_at',
+    'avatarUrl',
+    'isEmailVerified',
+    'isActive',
+    'isSuspended',
+    'updatedAt',
+    'createdAt',
   ] as Key[]
 ): Promise<Pick<User, Key>[] | null> => {
   try {
@@ -168,17 +168,17 @@ const getUserByEmail = async <Key extends keyof User>(
   keys: Key[] = [
     'id',
     'email',
-    'user_name',
+    'userName',
     'name',
     'password',
     'secret',
     'role',
-    'avatar_url',
-    'is_email_verified',
-    'is_active',
-    'is_suspended',
-    'updated_at',
-    'created_at',
+    'avatarUrl',
+    'isEmailVerified',
+    'isActive',
+    'isSuspended',
+    'updatedAt',
+    'createdAt',
   ] as Key[]
 ): Promise<Pick<User, Key> | null> => {
   try {

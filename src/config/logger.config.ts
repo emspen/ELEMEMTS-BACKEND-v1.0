@@ -1,8 +1,9 @@
 import winston from 'winston'
 import config from '@/config/env.config'
+import ApiError from '@/utils/apiError'
 
 const enumerateErrorFormat = winston.format((info) => {
-  if (info instanceof Error) {
+  if (info instanceof ApiError) {
     Object.assign(info, {message: info.stack})
   }
   return info

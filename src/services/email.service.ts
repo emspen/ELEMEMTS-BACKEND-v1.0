@@ -32,7 +32,7 @@ const sendEmail = async (to: string, subject: string, text: string) => {
     logger.info(`Email sent successfully to ${to}`)
   } catch (error: any) {
     logger.error(`Failed to send email to ${to}: ${error.message}`)
-    throw new Error(`Failed to send email: ${error.message}`)
+    throw new ApiError(httpStatus.INTERNAL_SERVER_ERROR, `Failed to send email: ${error.message}`)
   }
 }
 /**
@@ -54,7 +54,10 @@ const sendResetPasswordEmail = async (to: string, token: string) => {
     return token
   } catch (error: any) {
     logger.error(`Failed to send reset password email to ${to}: ${error.message}`)
-    throw new Error(`Failed to send reset password email: ${error.message}`)
+    throw new ApiError(
+      httpStatus.INTERNAL_SERVER_ERROR,
+      `Failed to send reset password email: ${error.message}`
+    )
   }
 }
 /**
@@ -74,7 +77,10 @@ const sendVerificationEmail = async (to: string, token: string): Promise<void> =
     logger.info(`Verification email sent successfully to ${to}`)
   } catch (error: any) {
     logger.error(`Failed to send verification email to ${to}: ${error.message}`)
-    throw new Error(`Failed to send verification email: ${error.message}`)
+    throw new ApiError(
+      httpStatus.INTERNAL_SERVER_ERROR,
+      `Failed to send verification email: ${error.message}`
+    )
   }
 }
 /**
@@ -94,7 +100,10 @@ const sendVerificationCode = async (to: string, token: string): Promise<void> =>
     logger.info(`Verification code sent successfully to ${to}`)
   } catch (error: any) {
     logger.error(`Failed to send verification code to ${to}: ${error.message}`)
-    throw new Error(`Failed to send verification code: ${error.message}`)
+    throw new ApiError(
+      httpStatus.INTERNAL_SERVER_ERROR,
+      `Failed to send verification code: ${error.message}`
+    )
   }
 }
 
@@ -113,12 +122,14 @@ const sendTeamInvitationEmail = async (from: string, to: string, token: string):
     logger.info(`Team invitation email sent successfully to ${to}`)
   } catch (error: any) {
     logger.error(`Failed to send team invitation email to ${to}: ${error.message}`)
-    throw new Error(`Failed to send team invitation email: ${error.message}`)
+    throw new ApiError(
+      httpStatus.INTERNAL_SERVER_ERROR,
+      `Failed to send team invitation email: ${error.message}`
+    )
   }
 }
 
 export default {
-  transport,
   sendEmail,
   sendResetPasswordEmail,
   sendVerificationEmail,

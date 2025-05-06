@@ -22,46 +22,179 @@ enum TokenType {
   INVITATION
 }
 
+enum Interval {
+  MONTHLY
+  ANNUAL
+}
+
+enum PlanType {
+  INDIVIDUAL
+  TEAM
+}
+
+enum SubscriptionStatus {
+  ACTIVE
+  CANCELED
+  EXPIRED
+}
+
+enum PaymentMethod {
+  STRIPE
+  PAYPAL
+}
+
+enum PaymentStatus {
+  PENDING
+  COMPLETED
+  CANCELED
+  REFUNDED
+}
+
+enum InvitationStatus {
+  PENDING
+  ACCEPTED
+  EXPIRED
+  DENIED
+}
+
 model User {
-  id         String  @id @default(uuid())
-  email      String  @unique
-  user_name  String? @unique
-  google_id  String? @unique
-  name       String?
-  avatar_url String?
-  password   String
-  secret     String
-  role       Role    @default(GUEST)
+  id        String  @id @default(uuid())
+  email     String  @unique
+  userName  String? @unique
+  googleId  String? @unique
+  name      String?
+  avatarUrl String?
+  password  String
+  secret    String
+  role      Role    @default(GUEST)
 
-  is_email_verified Boolean @default(false)
-  is_suspended      Boolean @default(false)
-  is_active         Boolean @default(false)
+  isEmailVerified Boolean @default(false)
+  isSuspended     Boolean @default(false)
+  isActive        Boolean @default(false)
 
-  created_at DateTime @default(now())
-  updated_at DateTime @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
-  carts    Cart[]
-  projects Project[]
+  carts          Cart[]
+  projects       Project[]
+  Subscription   Subscription[]
+  Team           Team[]
+  TeamMember     TeamMember[]
+  Payment        Payment[]
+  TeamInvitation TeamInvitation[]
 }
 
 model Cart {
-  id         String   @id @default(uuid())
-  name       String
-  user_id    String
-  created_at DateTime @default(now())
-  updated_at DateTime @updatedAt
-  user       User     @relation(fields: [user_id], references: [id])
+  id        String   @id @default(uuid())
+  name      String
+  userId    String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  user      User     @relation(fields: [userId], references: [id])
 
-  @@unique([name, user_id])
+  @@unique([name, userId])
 }
 
 model Project {
-  id         String   @id @default(uuid())
-  name       String
-  user_id    String
-  created_at DateTime @default(now())
-  updated_at DateTime @updatedAt
-  user       User     @relation(fields: [user_id], references: [id])
+  id        String   @id @default(uuid())
+  name      String
+  userId    String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  user      User     @relation(fields: [userId], references: [id])
 
-  @@unique([name, user_id])
+  @@unique([name, userId])
+}
+
+model Plan {
+  id       String   @id @default(uuid())
+  type     PlanType // 'Individual' or 'Team'
+  teamSize Int? // Null for INDIVIDUAL plan; 2-5 for TEAM plans
+  price    Float // Price in USD $
+  currency String   @default("USD")
+  interval Interval @default(MONTHLY)
+
+  createdAt    DateTime       @default(now())
+  updatedAt    DateTime       @updatedAt
+  Subscription Subscription[]
+}
+
+model Subscription {
+  id            String             @id @default(uuid())
+  planId        String
+  userId        String? // For individual plans
+  teamId        String? // For team plans
+  status        SubscriptionStatus @default(ACTIVE)
+  startDate     DateTime
+  endDate       DateTime
+  renewsAt      DateTime?
+  cancelledAt   DateTime?
+  paymentMethod PaymentMethod      @default(PAYPAL)
+  externalRef   String? // PayPal subscription ID, etc.
+  createdAt     DateTime           @default(now())
+  updatedAt     DateTime           @updatedAt
+
+  plan     Plan      @relation(fields: [planId], references: [id])
+  user     User?     @relation(fields: [userId], references: [id])
+  team     Team?
+  payments Payment[]
+}
+
+model Team {
+  id             String   @id @default(uuid())
+  name           String
+  ownerId        String
+  teamSize       Int
+  subscriptionId String   @unique
+  createdAt      DateTime @default(now())
+
+  owner          User             @relation(fields: [ownerId], references: [id])
+  subscription   Subscription     @relation(fields: [subscriptionId], references: [id])
+  members        TeamMember[]
+  TeamInvitation TeamInvitation[]
+}
+
+model TeamMember {
+  id       String    @id @default(uuid())
+  teamId   String
+  userId   String
+  role     String    @default("MEMBER") // 'admin' | 'member'
+  joinedAt DateTime  @default(now())
+  leftAt   DateTime?
+
+  team Team @relation(fields: [teamId], references: [id])
+  user User @relation(fields: [userId], references: [id])
+}
+
+model TeamInvitation {
+  id          String           @id @default(uuid())
+  email       String
+  teamId      String
+  team        Team             @relation(fields: [teamId], references: [id])
+  invitedById String
+  invitedBy   User             @relation(fields: [invitedById], references: [id])
+  status      InvitationStatus @default(PENDING) // or enum: pending | accepted | expired
+  token       String           @unique
+  createdAt   DateTime         @default(now())
+  expiresAt   DateTime
+  acceptedAt  DateTime?
+  userId      String? // linked upon registration
+}
+
+model Payment {
+  id              String        @id @default(uuid())
+  userId          String
+  subscriptionId  String
+  amount          Float // Amount in USD $
+  currency        String        @default("USD")
+  status          PaymentStatus @default(PENDING)
+  method          PaymentMethod @default(PAYPAL) // 'Paypal', etc.
+  paidAt          DateTime?
+  paypalOrderId   String?       @unique
+  paypalCaptureId String?
+  externalRef     String?
+  createdAt       DateTime      @default(now())
+
+  user         User         @relation(fields: [userId], references: [id])
+  subscription Subscription @relation(fields: [subscriptionId], references: [id])
 }
