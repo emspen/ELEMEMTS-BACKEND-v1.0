@@ -1,6 +1,8 @@
 import dotenv from 'dotenv'
 import path from 'path'
 import Joi from 'joi'
+import ApiError from '@/utils/apiError'
+import httpStatus from 'http-status'
 
 dotenv.config({path: path.join(process.cwd(), '.env')})
 
@@ -35,8 +37,8 @@ const envVarsSchema = Joi.object()
     GOOGLE_CLIENT_ID: Joi.string().description('Google client ID'),
     GOOGLE_CLIENT_SECRET: Joi.string().description('Google Client Secret'),
     GOOGLE_REDIRECT_URI: Joi.string().description('Google Redirect URI'),
-    TEAM_INVITATION_EXPIRATION_HOURS: Joi.number()
-      .default(24)
+    TEAM_INVITATION_EXPIRATION_DAYS: Joi.number()
+      .default(4)
       .description('Hours after which team invitation token expires'),
     TEAM_INVITATION_URL: Joi.string().description('Invitation redirect url'),
   })
@@ -45,7 +47,7 @@ const envVarsSchema = Joi.object()
 const {value: envVars, error} = envVarsSchema.prefs({errors: {label: 'key'}}).validate(process.env)
 
 if (error) {
-  throw new Error(`Config validation error: ${error.message}`)
+  throw new ApiError(httpStatus.INTERNAL_SERVER_ERROR, `Config validation error: ${error.message}`)
 }
 
 const envConfig = {
@@ -60,7 +62,7 @@ const envConfig = {
     verifyEmailExpirationMinutes: envVars.JWT_VERIFY_EMAIL_EXPIRATION_MINUTES,
   },
   teamInvitation: {
-    expirationHours: envVars.TEAM_INVITATION_EXPIRATION_HOURS,
+    expirationDays: envVars.TEAM_INVITATION_EXPIRATIONDAYS,
     url: envVars.TEAM_INVITATION_URL,
   },
   email: {
@@ -75,9 +77,9 @@ const envConfig = {
     from: envVars.EMAIL_FROM,
   },
   google: {
-    client_id: envVars.GOOGLE_CLIENT_ID,
-    client_secret: envVars.GOOGLE_CLIENT_SECRET,
-    redirect_uri: envVars.GOOGLE_REDIRECT_URI,
+    clientId: envVars.GOOGLE_CLIENT_ID,
+    clientSecret: envVars.GOOGLE_CLIENT_SECRET,
+    redirectUri: envVars.GOOGLE_REDIRECT_URI,
   },
   paypal: {
     clientId: envVars.PAYPAL_CLIENT_ID,

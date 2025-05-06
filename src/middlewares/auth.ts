@@ -30,11 +30,15 @@ const auth = async (req: Request, res: Response, next: NextFunction) => {
     // Verify the token
     const payload = jwt.verify(token, config.jwt.secret) as {
       sub: string
+      iat: number
       type: string
     }
 
     if (payload.type !== 'ACCESS') {
       throw new ApiError(httpStatus.UNAUTHORIZED, 'Invalid token type')
+    }
+    if (payload.iat * 1000 < Date.now()) {
+      throw new ApiError(httpStatus.UNAUTHORIZED, 'Token has expired')
     }
 
     // Get the user from the database
@@ -62,10 +66,14 @@ const userRole = async (req: Request, res: Response, next: NextFunction) => {
   const user = req.user as User
   if (!user) throw new ApiError(httpStatus.UNAUTHORIZED, 'User not found')
 
-  if (user.role !== 'INDIVIDUAL' && user.role !== 'TEAM')
-    next(new ApiError(httpStatus.UNAUTHORIZED, 'User not authorized'))
-  else {
-    next()
+  try {
+    if (user.role !== 'INDIVIDUAL' && user.role !== 'TEAM')
+      next(new ApiError(httpStatus.UNAUTHORIZED, 'User not authorized'))
+    else {
+      next()
+    }
+  } catch (error) {
+    next(error)
   }
 }
 

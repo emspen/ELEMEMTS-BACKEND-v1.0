@@ -1,6 +1,8 @@
+import httpStatus from 'http-status'
 import {Strategy as JwtStrategy, ExtractJwt, VerifyCallback} from 'passport-jwt'
 import prisma from '@/prisma/client'
 import {envConfig} from '@/config'
+import ApiError from '@/utils/apiError'
 
 enum TokenType {
   ACCESS = 'ACCESS',
@@ -15,7 +17,7 @@ const jwtOptions = {
 const jwtVerify: VerifyCallback = async (payload, done) => {
   try {
     if (payload.type !== TokenType.ACCESS) {
-      throw new Error('Invalid token type')
+      throw new ApiError(httpStatus.INTERNAL_SERVER_ERROR, 'Invalid token type')
     }
     const user = await prisma.user.findUnique({
       select: {
