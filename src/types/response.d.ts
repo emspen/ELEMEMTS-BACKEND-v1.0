@@ -12,7 +12,7 @@ export interface AuthTokensResponse {
 
 export interface VerifyToken {
   token: string
+  expires: Date
   type: TokenType
   userId: string
-  expires: Date
 }

@@ -1,7 +1,7 @@
 import prisma from '@/prisma/client'
 import slugify from 'slugify'
 import {logger} from '@/config'
-import ApiError from '@/utils/apiError'
+import ApiError from '@/utils/apiError.utils'
 import httpStatus from 'http-status'
 
 export const generateUniqueUsername = async (email: string): Promise<string> => {

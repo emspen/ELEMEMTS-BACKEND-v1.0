@@ -1,9 +1,9 @@
 import prisma from '@/prisma/client'
 import httpStatus from 'http-status'
 
-import {generateToken} from '@/utils/token'
+import {generateToken} from '@/utils/token.utils'
 import emailService from '@/services/shared/email.service'
-import ApiError from '@/utils/apiError'
+import ApiError from '@/utils/apiError.utils'
 import {envConfig} from '@/config'
 
 const createTeam = async (ownerId: string, name: string, subscriptionId: string) => {

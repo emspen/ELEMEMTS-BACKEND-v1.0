@@ -2,7 +2,7 @@ import httpStatus from 'http-status'
 import {Strategy as JwtStrategy, ExtractJwt, VerifyCallback} from 'passport-jwt'
 import prisma from '@/prisma/client'
 import {envConfig} from '@/config'
-import ApiError from '@/utils/apiError'
+import ApiError from '@/utils/apiError.utils'
 
 enum TokenType {
   ACCESS = 'ACCESS',

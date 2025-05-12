@@ -57,6 +57,26 @@ enum InvitationStatus {
   DENIED
 }
 
+enum AssetStatus {
+  DRAFT
+  PENDING
+  PUBLISHED
+  ARCHIVED
+}
+
+enum Permission {
+  PUBLIC
+  PRIVATE
+}
+
+enum ProductType {
+  IMAGE
+  IMAGE_SET
+  VIDEO
+  AUDIO
+  AUDIO_SET
+}
+
 model User {
   id        String  @id @default(uuid())
   email     String  @unique
@@ -140,6 +160,24 @@ model Subscription {
   payments Payment[]
 }
 
+model Payment {
+  id              String        @id @default(uuid())
+  userId          String
+  subscriptionId  String
+  amount          Float // Amount in USD $
+  currency        String        @default("USD")
+  status          PaymentStatus @default(PENDING)
+  method          PaymentMethod @default(PAYPAL) // 'Paypal', etc.
+  paidAt          DateTime?
+  paypalOrderId   String?       @unique
+  paypalCaptureId String?
+  externalRef     String?
+  createdAt       DateTime      @default(now())
+
+  user         User         @relation(fields: [userId], references: [id])
+  subscription Subscription @relation(fields: [subscriptionId], references: [id])
+}
+
 model Team {
   id             String   @id @default(uuid())
   name           String
@@ -147,6 +185,7 @@ model Team {
   teamSize       Int
   subscriptionId String   @unique
   createdAt      DateTime @default(now())
+  isSuspended    Boolean  @default(false)
 
   owner          User             @relation(fields: [ownerId], references: [id])
   subscription   Subscription     @relation(fields: [subscriptionId], references: [id])
@@ -173,7 +212,7 @@ model TeamInvitation {
   team        Team             @relation(fields: [teamId], references: [id])
   invitedById String
   invitedBy   User             @relation(fields: [invitedById], references: [id])
-  status      InvitationStatus @default(PENDING) // or enum: pending | accepted | expired
+  status      InvitationStatus @default(PENDING) // or enum: pending | accepted | expired | denied
   token       String           @unique
   createdAt   DateTime         @default(now())
   expiresAt   DateTime
@@ -181,20 +220,55 @@ model TeamInvitation {
   userId      String? // linked upon registration
 }
 
-model Payment {
-  id              String        @id @default(uuid())
-  userId          String
-  subscriptionId  String
-  amount          Float // Amount in USD $
-  currency        String        @default("USD")
-  status          PaymentStatus @default(PENDING)
-  method          PaymentMethod @default(PAYPAL) // 'Paypal', etc.
-  paidAt          DateTime?
-  paypalOrderId   String?       @unique
-  paypalCaptureId String?
-  externalRef     String?
-  createdAt       DateTime      @default(now())
+model Product {
+  id            String      @id @default(uuid())
+  name          String
+  slug          String      @unique // SEO-friendly URL
+  description   String?
+  previewType   ProductType @default(IMAGE) // 'IMAGE' | 'IMAGE_SET' | 'VIDEO' | 'AUDIO' | 'AUDIO_SET'
+  attributes    Json?       @db.JsonB // Flexible metadata storage
+  thumbnailPath String[]
+  sourcePath    String
+  status        AssetStatus @default(PENDING) // DRAFT | PENDING | PUBLISHED | ARCHIVED
+  permission    Permission  @default(PUBLIC) // PUBLIC | PRIVATE 
 
-  user         User         @relation(fields: [userId], references: [id])
-  subscription Subscription @relation(fields: [subscriptionId], references: [id])
+  // Classification
+  category   Category @relation(fields: [categoryId], references: [id])
+  categoryId String
+
+  // Versioning & soft delete
+  productVersion Int     @default(1) // Increment on breaking schema changes
+  deleted        Boolean @default(false) // Soft-delete flag
+
+  tags      Tag[]
+  // Auditing
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt()
+  createdBy String?
+  updatedBy String?
+}
+
+model Tag {
+  id        String     @id @default(uuid())
+  name      String     @unique
+  category  Category[]
+  createdAt DateTime   @default(now())
+
+  products Product[]
+}
+
+model Category {
+  id   String @id @default(uuid())
+  name String @unique
+  slug String @unique
+
+  parentId String? // null for top-level
+  parent   Category?  @relation("CategoryHierarchy", fields: [parentId], references: [id])
+  children Category[] @relation("CategoryHierarchy")
+
+  products  Product[]
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt()
+  deleted   Boolean   @default(false)
+  Tag       Tag[]
 }
