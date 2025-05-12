@@ -1,7 +1,7 @@
 import nodemailer from 'nodemailer'
 import {envConfig} from '@/config'
 import {logger} from '@/config'
-import ApiError from '@/utils/apiError'
+import ApiError from '@/utils/apiError.utils'
 import httpStatus from 'http-status'
 
 const transport = nodemailer.createTransport(envConfig.email.smtp)
@@ -130,6 +130,7 @@ const sendTeamInvitationEmail = async (from: string, to: string, token: string):
 }
 
 export default {
+  transport,
   sendEmail,
   sendResetPasswordEmail,
   sendVerificationEmail,

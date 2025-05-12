@@ -4,7 +4,7 @@ import httpStatus from 'http-status'
 
 import {AuthTokensResponse} from '@/types/response'
 import {envConfig} from '@/config'
-import ApiError from '@/utils/apiError'
+import ApiError from '@/utils/apiError.utils'
 import userService from '@/services/shared/user.service'
 import {TokenType} from '@prisma/client'
 import {VerifyToken} from '@/types/response'

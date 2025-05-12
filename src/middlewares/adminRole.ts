@@ -1,4 +1,4 @@
-import ApiError from '@/utils/apiError'
+import ApiError from '@/utils/apiError.utils'
 import {User} from '@prisma/client'
 import {Request, Response, NextFunction} from 'express'
 import httpStatus from 'http-status'

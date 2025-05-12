@@ -3,9 +3,9 @@ import {envConfig} from '@/config'
 import userService from '@/services/shared/user.service'
 import axios from 'axios'
 
-import {generateTotp} from '@/utils/totp'
+import {generateTotp} from '@/utils/totp.utils'
 import authService from '@/services/shared/auth.service'
-import ApiError from '@/utils/apiError'
+import ApiError from '@/utils/apiError.utils'
 import httpStatus from 'http-status'
 
 interface GoogleTokenResponse {

@@ -4,13 +4,14 @@ import compression from 'compression'
 import cors from 'cors'
 import passport from 'passport'
 import httpStatus from 'http-status'
+import cookieParser from 'cookie-parser'
 import config from '@/config/env.config'
 import {morgan} from '@/config'
 import {jwtStrategy} from '@/config'
 import xss from '@/middlewares/xss'
 import {authLimiter} from '@/middlewares/rateLimiter'
 import {errorConverter, errorHandler} from '@/middlewares/error'
-import ApiError from '@/utils/apiError'
+import ApiError from '@/utils/apiError.utils'
 import routes from '@/route'
 
 const app = express()
@@ -21,14 +22,18 @@ if (config.env !== 'test') {
 }
 
 app.use(helmet())
+app.use(cookieParser())
 app.use(express.json())
 app.use(express.urlencoded({extended: true}))
 app.use(xss())
 app.use(compression())
-
 // enable cors
-app.use(cors())
-app.options('*', cors())
+app.use(
+  cors({
+    origin: 'http://localhost:3000', // ✅ Don't use '*'
+    credentials: true, // ✅ Allow cookies / auth headers
+  })
+)
 
 // jwt authentication
 app.use(passport.initialize())

@@ -2,7 +2,7 @@ import httpStatus from 'http-status'
 import {PrismaClient} from '@prisma/client'
 import {googleAuthHandler} from '@/services/shared/googleAuth.service'
 import tokenService from '@/services/shared/token.service'
-import catchAsync from '@/utils/catchAsync'
+import catchAsync from '@/utils/catchAsync.utils'
 
 const prisma = new PrismaClient()
 

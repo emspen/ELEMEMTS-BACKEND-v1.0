@@ -1,14 +1,16 @@
+import {rateLimit} from 'express-rate-limit'
 import httpStatus from 'http-status'
 
-import exclude from '@/utils/exclude'
-import ApiError from '@/utils/apiError'
+import exclude from '@/utils/exclude.utils'
+import ApiError from '@/utils/apiError.utils'
 
 import authService from '@/services/shared/auth.service'
 import userService from '@/services/shared/user.service'
 import tokenService from '@/services/shared/token.service'
 
 import {TokenType, User} from '@prisma/client'
-import catchAsync from '@/utils/catchAsync'
+import catchAsync from '@/utils/catchAsync.utils'
+import {logger} from '@/config'
 
 const /**
    * Register a new user
@@ -18,7 +20,7 @@ const /**
    */
   registerUser = catchAsync(async (req, res) => {
     try {
-      const {name, email, password} = req.body
+      const {email, password, name} = req.body
       const user = await authService.register(email, name, password)
       res.status(httpStatus.CREATED).send({
         status: 'success',
@@ -51,7 +53,7 @@ const /**
 
       res.cookie('refreshToken', tokens.refresh.token, {
         httpOnly: true,
-        secure: process.env.NODE_ENV === 'production',
+        secure: true,
         expires: tokens.refresh.expires,
         sameSite: 'strict',
         path: '/api/v1/auth/refresh-tokens', // Restrict refresh token to specific path
@@ -99,10 +101,13 @@ const /**
    */
   refreshTokens = catchAsync(async (req, res) => {
     try {
-      const tokens = await authService.refreshAuth(req.body.refreshToken)
+      const refreshToken = req.cookies.refreshToken
+      console.log(req.cookies.refreshToken)
+      logger.info(`🚀 refresh - token, ${refreshToken}`)
+      const tokens = await authService.refreshAuth(refreshToken)
       res.cookie('refreshToken', tokens.refresh.token, {
         httpOnly: true,
-        secure: process.env.NODE_ENV === 'production',
+        secure: true,
         expires: tokens.refresh.expires,
         sameSite: 'strict',
         path: '/api/v1/auth/refresh-tokens', // Restrict refresh token to specific path
@@ -231,7 +236,7 @@ const /**
       if (token) {
         const decoded = await tokenService.verifyToken(token, TokenType.ACCESS)
         if (decoded.userId) {
-          const user = await userService.getUserById(
+          const user = await userService.getUserByIds(
             [decoded.userId],
             ['email', 'name', 'role', 'avatarUrl']
           )

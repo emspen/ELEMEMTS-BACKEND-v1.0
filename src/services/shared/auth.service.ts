@@ -2,10 +2,10 @@ import httpStatus from 'http-status'
 import tokenService from '@/services/shared/token.service'
 import userService from '@/services/shared/user.service'
 import emailService from './email.service'
-import ApiError from '@/utils/apiError'
-import exclude from '@/utils/exclude'
-import {encryptPassword, isPasswordMatch} from '@/utils/encryption'
-import {regenerateTotp, verifyTotp} from '@/utils/totp'
+import ApiError from '@/utils/apiError.utils'
+import exclude from '@/utils/exclude.utils'
+import {encryptPassword, isPasswordMatch} from '@/utils/encryption.utils'
+import {regenerateTotp, verifyTotp} from '@/utils/totp.utils'
 import {logger} from '@/config'
 import {TokenType, User} from '@prisma/client'
 
@@ -18,8 +18,8 @@ import {TokenType, User} from '@prisma/client'
  */
 const register = async (
   email: string,
-  password: string,
-  name: string
+  name: string,
+  password: string
 ): Promise<
   Omit<
     User,
@@ -107,14 +107,13 @@ const loginUserWithEmailAndPassword = async (
     'isSuspended',
   ])
   if (!user) throw new ApiError(httpStatus.UNAUTHORIZED, 'Incorrect email')
-
-  if (user?.googleId === undefined)
+  if (user?.googleId === undefined || user?.googleId === null) {
     if (!(await isPasswordMatch(password, user.password as string))) {
       throw new ApiError(httpStatus.UNAUTHORIZED, 'Incorrect email or password')
-    } else if (user?.googleId !== googleId || user?.isEmailVerified === false) {
-      console.log('😮 User ', user.googleId, '\n', user.isEmailVerified, '\n', 'Input', googleId)
-      throw new ApiError(httpStatus.NOT_FOUND, 'Authorization Failed')
     }
+  } else if (user?.googleId !== googleId) {
+    throw new ApiError(httpStatus.NOT_FOUND, 'Authorization Failed')
+  }
   return exclude(user, ['password'])
 }
 
@@ -140,16 +139,19 @@ const logout = async (id: string): Promise<void> => {
  */
 const refreshAuth = async (refreshToken: string): Promise<any> => {
   try {
-    console.log('👌👌👌', refreshToken)
+    if (!refreshToken) throw new ApiError(httpStatus.BAD_REQUEST, 'Refresh token is required')
     const refreshTokenData = await tokenService.verifyToken(refreshToken, TokenType.REFRESH)
     if (refreshTokenData.userId) {
-      const user = await userService.getUserById([refreshTokenData.userId], ['id'])
+      const user = await userService.getUserByIds([refreshTokenData.userId], ['id'])
       if (!user) {
         throw new ApiError(httpStatus.BAD_REQUEST, 'User Not Found ')
       }
       return tokenService.generateAuthTokens({id: user[0].id})
     }
   } catch (error) {
+    if (error instanceof ApiError) {
+      throw error
+    }
     throw new ApiError(httpStatus.UNAUTHORIZED, 'Please authenticate')
   }
 }
@@ -167,7 +169,7 @@ const resetPassword = async (resetPasswordToken: string, newPassword: string): P
       TokenType.RESET_PASSWORD
     )
     if (resetPasswordTokenData.userId) {
-      const user = await userService.getUserById([resetPasswordTokenData.userId])
+      const user = await userService.getUserByIds([resetPasswordTokenData.userId], ['id'])
       if (!user) {
         throw new ApiError(httpStatus.BAD_REQUEST, 'User Not Found ')
       }

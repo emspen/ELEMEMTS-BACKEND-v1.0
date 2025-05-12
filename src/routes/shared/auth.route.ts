@@ -8,8 +8,8 @@ const router = express.Router()
 
 router.post('/register', validate(authValidation.register), authController.registerUser)
 router.post('/login', validate(authValidation.login), authController.login)
-router.post('/logout', auth.auth, authController.logout)
-router.post('/refresh-tokens', validate(authValidation.refreshTokens), authController.refreshTokens)
+router.patch('/logout', auth.auth, authController.logout)
+router.get('/refresh-tokens', authController.refreshTokens)
 router.post(
   '/forgot-password',
   validate(authValidation.forgotPassword),

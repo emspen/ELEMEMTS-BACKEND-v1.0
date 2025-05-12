@@ -2,10 +2,12 @@ import {NextFunction, Request, Response} from 'express'
 import passport from 'passport'
 import httpStatus from 'http-status'
 import {User} from '@prisma/client'
-import ApiError from '@/utils/apiError'
+import ApiError from '@/utils/apiError.utils'
 import jwt from 'jsonwebtoken'
 import config from '@/config/env.config'
 import prisma from '@/prisma/client'
+import tokenService from '@/services/shared/token.service'
+import {VerifyToken} from '@/types/response'
 
 // const verifyCallback =
 //   (req: any, resolve: (value?: unknown) => void, reject: (reason?: unknown) => void) =>
@@ -28,28 +30,15 @@ const auth = async (req: Request, res: Response, next: NextFunction) => {
     const token = authHeader.substring(7) // Remove 'Bearer ' prefix
 
     // Verify the token
-    const payload = jwt.verify(token, config.jwt.secret) as {
-      sub: string
-      iat: number
-      type: string
-    }
-
-    if (payload.type !== 'ACCESS') {
-      throw new ApiError(httpStatus.UNAUTHORIZED, 'Invalid token type')
-    }
-    if (payload.iat * 1000 > Date.now()) {
-      throw new ApiError(httpStatus.UNAUTHORIZED, 'Token has expired')
-    }
-
+    const payload = await tokenService.verifyToken(token, 'ACCESS')
     // Get the user from the database
     const user = await prisma.user.findUnique({
-      where: {id: payload.sub},
+      where: {id: payload.userId, isSuspended: false},
     })
 
     if (!user) {
       throw new ApiError(httpStatus.UNAUTHORIZED, 'User not found')
     }
-
     // Attach the user to the request
     req.user = user
     next()

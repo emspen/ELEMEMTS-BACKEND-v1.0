@@ -3,7 +3,7 @@ import {Prisma} from '@prisma/client'
 import httpStatus from 'http-status'
 import {envConfig} from '@/config'
 import {logger} from '@/config'
-import ApiError from '@/utils/apiError'
+import ApiError from '@/utils/apiError.utils'
 
 export const errorConverter: ErrorRequestHandler = (err, req, res, next) => {
   let error = err
