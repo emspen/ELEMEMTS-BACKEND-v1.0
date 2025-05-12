@@ -1,4 +1,4 @@
-import catchAsync from '@/utils/catchAsync'
+import catchAsync from '@/utils/catchAsync.utils'
 import httpStatus from 'http-status'
 import e, {Request, Response} from 'express'
 import {User} from '@prisma/client'

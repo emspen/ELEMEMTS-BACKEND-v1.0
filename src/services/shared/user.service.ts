@@ -1,13 +1,13 @@
 import httpStatus from 'http-status'
-import ApiError from '@/utils/apiError'
-import {encryptPassword} from '@/utils/encryption'
+import ApiError from '@/utils/apiError.utils'
+import {encryptPassword} from '@/utils/encryption.utils'
 
 import prisma from '@/prisma/client'
 import {User, Prisma} from '@prisma/client'
-import {generateTotp} from '@/utils/totp'
+import {generateTotp} from '@/utils/totp.utils'
 import emailService from './email.service'
 import {logger} from '@/config' // Assuming you have a logger utility
-import {generateUniqueUsername} from '@/utils/uniqueUsername'
+import {generateUniqueUsername} from '@/utils/uniqueUsername.utils'
 
 /**
  * Create a user
@@ -73,11 +73,21 @@ const queryUsers = async <Key extends keyof User>(
     sortBy?: string
     sortType?: 'asc' | 'desc'
   },
-  keys: Key[] = ['id', 'email', 'name', 'isEmailVerified', 'createdAt', 'updatedAt'] as Key[]
-): Promise<Pick<User, Key>[]> => {
+  keys: Key[] = [
+    'id',
+    'email',
+    'name',
+    'avatarUrl',
+    'role',
+    'isEmailVerified',
+    'isSuspended',
+    'createdAt',
+    'updatedAt',
+  ] as Key[]
+): Promise<[Pick<User, Key>[], number]> => {
   try {
     const {limit = 10, page = 1, sortBy = 'createdAt', sortType = 'desc'} = options
-
+    console.log('filter', filter)
     // Process date filters if they exist
     const where: Record<string, any> = {...filter}
 
@@ -108,15 +118,24 @@ const queryUsers = async <Key extends keyof User>(
         })
       }
     }
-    const users = await prisma.user.findMany({
-      where,
-      select: keys.reduce((obj, k) => ({...obj, [k]: true}), {}),
-      skip: (page - 1) * limit,
-      take: limit,
-      orderBy: {[sortBy]: sortType},
-    })
-    return users as Pick<User, Key>[]
+    const [total, users] = await Promise.all([
+      prisma.user.count({where}),
+      prisma.user.findMany({
+        where,
+        select: keys.reduce((obj, k) => ({...obj, [k]: true}), {}),
+        skip: (page - 1) * limit,
+        take: limit,
+        orderBy: {[sortBy]: sortType},
+      }),
+    ])
+    return [users as Pick<User, Key>[], total]
   } catch (error) {
+    if (error instanceof Prisma.PrismaClientKnownRequestError) {
+      if (error.code === 'P2025') {
+        logger.error('User not found:', error.meta?.cause)
+        throw new ApiError(httpStatus.NOT_FOUND, 'User not found')
+      }
+    }
     logger.error('Error querying users:', error)
     throw new ApiError(httpStatus.INTERNAL_SERVER_ERROR, 'Failed to query users')
   }
@@ -128,7 +147,8 @@ const queryUsers = async <Key extends keyof User>(
  * @param {Array<Key>} keys
  * @returns {Promise<Pick<User, Key> | null>}
  */
-const getUserById = async <Key extends keyof User>(
+
+const getUserByIds = async <Key extends keyof User>(
   ids: Array<string>,
   keys: Key[] = [
     'id',
@@ -155,9 +175,7 @@ const getUserById = async <Key extends keyof User>(
     logger.error(`Error getting user by ID ${ids}:`, error)
     throw new ApiError(httpStatus.INTERNAL_SERVER_ERROR, 'Failed to get user by ID')
   }
-}
-
-/**
+} /**
  * Get user by email
  * @param {string} email
  * @param {Array<Key>} keys
@@ -201,22 +219,18 @@ const getUserByEmail = async <Key extends keyof User>(
 const updateUserById = async <Key extends keyof User>(
   id: Array<string>,
   updateBody: Prisma.UserUpdateInput,
-  keys: Key[] = ['id', 'email', 'name', 'secret', 'role'] as Key[]
-): Promise<Pick<User, Key>[] | null> => {
+  keys: Key[] = ['id', 'email', 'name', 'secret', 'role', 'isSuspended', 'isActive'] as Key[]
+) => {
   try {
-    const user = await getUserById(id, keys)
+    const user = await getUserByIds(id, keys)
     if (!user) {
       throw new ApiError(httpStatus.NOT_FOUND, 'User not found')
     }
+    console.log('updateBody', updateBody)
     const users = await prisma.user.updateMany({
       where: {id: {in: id}},
       data: updateBody,
     })
-    const updatedUser = await prisma.user.findMany({
-      where: {id: {in: id}},
-      select: keys.reduce((obj, k) => ({...obj, [k]: true}), {}) as Prisma.UserSelect,
-    })
-    return updatedUser as Pick<User, Key>[] | null
   } catch (error) {
     if (error instanceof ApiError) {
       throw error
@@ -250,7 +264,7 @@ const updateUserById = async <Key extends keyof User>(
 export default {
   createUser,
   queryUsers,
-  getUserById,
+  getUserByIds,
   getUserByEmail,
   updateUserById,
 }
