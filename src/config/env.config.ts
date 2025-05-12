@@ -1,7 +1,7 @@
 import dotenv from 'dotenv'
 import path from 'path'
 import Joi from 'joi'
-import ApiError from '@/utils/apiError'
+import ApiError from '@/utils/apiError.utils'
 import httpStatus from 'http-status'
 
 dotenv.config({path: path.join(process.cwd(), '.env')})
